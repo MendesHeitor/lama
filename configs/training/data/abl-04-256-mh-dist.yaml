@@ -28,16 +28,19 @@ train:
     occ_mask_indir: ${location.occ_mask_root_dir}/train
 
     segm_proba: 0
+  
 
-  transform_variant: distortions
+  transform_variant: resize  
   dataloader_kwargs:
     batch_size: ${data.batch_size}
     shuffle: True
     num_workers: ${data.num_workers}
 
+
 val:
   indir: ${location.data_root_dir}/val
   img_suffix: .png
+  out_size: 256
   dataloader_kwargs:
     batch_size: ${data.val_batch_size}
     shuffle: False

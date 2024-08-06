@@ -19,9 +19,9 @@ class MakeManyMasksWrapper:
         self.impl = impl
         self.variants_n = variants_n
 
-    def get_masks(self, img, indir= None):
+    def get_masks(self, img, img_path=None, indir=None):
         img = np.transpose(np.array(img), (2, 0, 1))
-        return [self.impl(img,indir=indir)[0] for _ in range(self.variants_n)]
+        return [self.impl(img, path=img_path, indir=indir)[0] for _ in range(self.variants_n)]
 
 
 def process_images(src_images, indir, outdir, config):
@@ -44,22 +44,12 @@ def process_images(src_images, indir, outdir, config):
 
             image = Image.open(infile).convert('RGB')
 
-            # scale input image to output resolution and filter smaller images
-            if min(image.size) < config.cropping.out_min_size:
-                handle_small_mode = SmallMode(config.cropping.handle_small_mode)
-                if handle_small_mode == SmallMode.DROP:
-                    continue
-                elif handle_small_mode == SmallMode.UPSCALE:
-                    factor = config.cropping.out_min_size / min(image.size)
-                    out_size = (np.array(image.size) * factor).round().astype('uint32')
-                    image = image.resize(out_size, resample=Image.BICUBIC)
-            else:
-                factor = config.cropping.out_min_size / min(image.size)
-                out_size = (np.array(image.size) * factor).round().astype('uint32')
-                image = image.resize(out_size, resample=Image.BICUBIC)
+            out_size = (256, 256)
+            image = image.resize(out_size, resample=Image.NEAREST)
+            
 
             # generate and select masks
-            src_masks = mask_generator.get_masks(image,indir)
+            src_masks = mask_generator.get_masks(image, infile, indir)
 
             filtered_image_mask_pairs = []
             for cur_mask in src_masks:
@@ -112,6 +102,7 @@ def main(args):
         
     print("DEBUG",config)    
     in_files = list(glob.glob(os.path.join(args.indir, '**', f'*.{args.ext}'), recursive=True))
+    print(len(in_files), in_files,args.indir)
     if args.n_jobs == 0:
         process_images(in_files, args.indir, args.outdir, config)
     else:

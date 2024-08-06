@@ -320,21 +320,27 @@ class MixedMaskGenerator:
         if self.occ_mask:
             
             if path is None:
-                raise Exception("Trying to use occlusion mask but no path is provided!\nTroubleshoot-Idea: check the dataset call for the mask generation function")
+                raise Exception("Trying to use occlusion mask but no path for the original image is provided!\n | Check the call for the mask generation function")
             
             # Deriving the occlusion mask path from the image path
             filename = os.path.basename(path)
-            occ_mask_path = path.replace(indir,self.occ_mask_indir)
+            occ_mask_path = path.replace(indir, self.occ_mask_indir)
             occ_mask_path = occ_mask_path.replace(filename, "")
             occ_mask_path = os.path.join(occ_mask_path, f"occlusion_{filename}") 
 
             occ_mask = cv2.imread(occ_mask_path)
             occ_mask = cv2.cvtColor(occ_mask, cv2.COLOR_BGR2GRAY)
+            print(occ_mask.shape, result.shape[-2:]) 
+            # Occlusion masks are size 256 by default, but for some sample images there is a temporary need for resizing || Using [-2:] to get the last two values of the shape
+            if occ_mask.shape != result.shape[-2:]:
+                new_height, new_width = result.shape[-2:]
+                occ_mask = cv2.resize(occ_mask, (new_width, new_height), interpolation=cv2.INTER_NEAREST) # Inverting the dimensions to adpt to opencv's function
 
-            occ_mask = np.expand_dims(occ_mask, axis=0)
-            # Convert mask2 to 0 and 1
+            # Convert mask2 to 0s and 1s
             occ_mask = occ_mask / np.max(occ_mask)
             occ_mask = (occ_mask > 0).astype('float32')
+
+            occ_mask = np.expand_dims(occ_mask, axis=0)
 
             # Blend the masks
             result = np.logical_or(result, occ_mask).astype(result.dtype)

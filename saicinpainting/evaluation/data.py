@@ -40,14 +40,16 @@ def pad_tensor_to_modulo(img, mod):
     return F.pad(img, pad=(0, out_width - width, 0, out_height - height), mode='reflect')
 
 
-def scale_image(img, factor, interpolation=cv2.INTER_AREA):
+def scale_image(img, factor= None, dsize=None, interpolation=cv2.INTER_AREA):
     if img.shape[0] == 1:
         img = img[0]
     else:
         img = np.transpose(img, (1, 2, 0))
+    if factor is not None:
 
-    img = cv2.resize(img, dsize=None, fx=factor, fy=factor, interpolation=interpolation)
-
+        img = cv2.resize(img, dsize=None, fx=factor, fy=factor, interpolation=interpolation)
+    else:
+        img = cv2.resize(img, dsize=dsize, interpolation=interpolation)
     if img.ndim == 2:
         img = img[None, ...]
     else:
@@ -70,6 +72,10 @@ class InpaintingDataset(Dataset):
         image = load_image(self.img_filenames[i], mode='RGB')
         mask = load_image(self.mask_filenames[i], mode='L')
         result = dict(image=image, mask=mask[None, ...])
+        print(image.shape, "Shape da imagem")
+        print(image.shape, "Shape da máscara")
+        mask_shape = (mask.shape[0], mask.shape[1])
+        image = scale_image(image, dsize=mask_shape)
 
         if self.scale_factor is not None:
             result['image'] = scale_image(result['image'], self.scale_factor)
