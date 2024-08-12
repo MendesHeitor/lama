@@ -72,8 +72,6 @@ class InpaintingDataset(Dataset):
         image = load_image(self.img_filenames[i], mode='RGB')
         mask = load_image(self.mask_filenames[i], mode='L')
         result = dict(image=image, mask=mask[None, ...])
-        print(image.shape, "Shape da imagem")
-        print(image.shape, "Shape da máscara")
         mask_shape = (mask.shape[0], mask.shape[1])
         image = scale_image(image, dsize=mask_shape)
 

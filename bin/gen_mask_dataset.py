@@ -44,8 +44,20 @@ def process_images(src_images, indir, outdir, config):
 
             image = Image.open(infile).convert('RGB')
 
-            out_size = (256, 256)
-            image = image.resize(out_size, resample=Image.NEAREST)
+            # scale input image to output resolution and filter smaller images
+            if min(image.size) < config.cropping.out_min_size:
+                handle_small_mode = SmallMode(config.cropping.handle_small_mode)
+                if handle_small_mode == SmallMode.DROP:
+                    continue
+                elif handle_small_mode == SmallMode.UPSCALE:
+                    factor = config.cropping.out_min_size / min(image.size)
+                    out_size = (np.array(image.size) * factor).round().astype('uint32')
+                    image = image.resize(out_size, resample=Image.BICUBIC)
+            else:
+                factor = config.cropping.out_min_size / min(image.size)
+                out_size = (np.array(image.size) * factor).round().astype('uint32')
+                image = image.resize(out_size, resample=Image.BICUBIC)
+
             
 
             # generate and select masks
@@ -94,11 +106,13 @@ def main(args):
     os.makedirs(args.outdir, exist_ok=True)
 
     config = load_yaml(args.config)
+
     if args.occ_indir:
         if "occ_mask_indir" in config.mask_generator_kwargs:
             config.mask_generator_kwargs["occ_mask_indir"]= args.occ_indir
         else:
             print("ERROR | Trying to generate using occlusion masks but the config file does not contain the path to them")
+        
         
     print("DEBUG",config)    
     in_files = list(glob.glob(os.path.join(args.indir, '**', f'*.{args.ext}'), recursive=True))
@@ -126,3 +140,4 @@ if __name__ == '__main__':
     aparser.add_argument('--ext', type=str, default='jpg', help='Input image extension')
 
     main(aparser.parse_args())
+

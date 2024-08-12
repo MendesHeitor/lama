@@ -128,7 +128,6 @@ def get_transforms(transform_variant, out_size):
             A.ToFloat()
         ])
     elif transform_variant == 'resize':
-        print ("Entrou no resize")
         transform = A.Compose([
             A.Resize(height=out_size, width=out_size),  # Usar Resize
             A.HorizontalFlip(),
@@ -218,7 +217,8 @@ def get_transforms(transform_variant, out_size):
 def make_default_train_dataloader(indir, kind='default', out_size=256, mask_gen_kwargs=None, transform_variant='default',
                                   mask_generator_kind="mixed", dataloader_kwargs=None, ddp_kwargs=None, **kwargs):
     LOGGER.info(f'Make train dataloader {kind} from {indir}. Using mask generator={mask_generator_kind}')
-    print(out_size)
+    
+    (out_size)
     mask_generator = get_mask_generator(kind=mask_generator_kind, kwargs=mask_gen_kwargs)
     transform = get_transforms(transform_variant, out_size)
 
@@ -258,7 +258,7 @@ def make_default_train_dataloader(indir, kind='default', out_size=256, mask_gen_
     return dataloader
 
 
-def make_default_val_dataset(indir, kind='default', out_size=512, transform_variant='default', **kwargs):
+def make_default_val_dataset(indir, kind='default', out_size=256, transform_variant='default', **kwargs):
     if OmegaConf.is_list(indir) or isinstance(indir, (tuple, list)):
         return ConcatDataset([
             make_default_val_dataset(idir, kind=kind, out_size=out_size, transform_variant=transform_variant, **kwargs) for idir in indir 
